@@ -7,6 +7,8 @@ export type PlayingSet = {
   space: string;
   event: string;
   mixcloudUrl: string;
+  coverUrl?: string;
+  duration?: number;
 };
 
 type PlayerState = {

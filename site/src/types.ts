@@ -19,6 +19,7 @@ export type SetRecord = {
   play_count?: number;
   favorite_count?: number;
   mixcloud_tags?: string[];
+  cover_url?: string;
   artist_genres?: string[];
   mood?: string[];
   energy?: number;

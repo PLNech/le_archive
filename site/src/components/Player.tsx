@@ -19,6 +19,9 @@ export function Player() {
   return (
     <div className="player" role="region" aria-label="audio player">
       <div className="player-head">
+        {current.coverUrl && (
+          <img className="player-cover" src={current.coverUrl} alt="" />
+        )}
         <span className="player-now">now playing</span>
         <span className="player-artist">{current.artists.join(" · ")}</span>
         <span className="player-meta">
