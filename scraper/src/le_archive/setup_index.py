@@ -33,6 +33,15 @@ SETTINGS = {
         "focus_score",
         "duration_bucket",
         "tempo_bucket",
+        # P6 numeric audio features (range sliders)
+        "bpm",
+        "brightness",
+        "noisiness",
+        "energy_mean",
+        "energy_dynamic_range",
+        # Enrichment gate (filter out sets not yet analyzed)
+        "_enrichment.audio",
+        "_enrichment.mood",
     ],
     "customRanking": [
         "desc(play_count)",

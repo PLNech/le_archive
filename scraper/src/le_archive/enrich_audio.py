@@ -234,13 +234,15 @@ def main() -> int:
         and not r.get("_enrichment", {}).get("audio")
         and not r.get("mixcloud_missing")
     ]
-    print(f"[phase6] {len(todo)} sets pending audio analysis")
+    # Always process shortest-first so visible progress accrues fast and
+    # long marathon sets run once we're confident the pipeline is stable.
+    todo.sort(key=lambda r: r.get("duration") or 99_999)
+
+    print(f"[phase6] {len(todo)} sets pending audio analysis (shortest first)")
     if args.limit:
         todo = todo[: args.limit]
         print(f"[phase6] limit → {len(todo)}")
     if args.dry_run:
-        # Pick the shortest pending set so iteration is fast.
-        todo.sort(key=lambda r: r.get("duration") or 99_999)
         todo = todo[:1]
         print(
             f"[phase6] dry-run: 1 set (shortest available, "

@@ -1524,3 +1524,167 @@ body {
   color: var(--stamp);
   text-decoration-color: var(--stamp);
 }
+
+/* ============================================================
+ *  Focus Strip — seminar-room console (P7)
+ * ============================================================ */
+.focus-strip {
+  margin: 0 auto;
+  padding: 1.1rem 2rem 0.8rem;
+  max-width: 1400px;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  background: linear-gradient(
+    180deg,
+    var(--paper-elev) 0%,
+    var(--paper) 100%
+  );
+}
+.focus-strip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.focus-strip-eyebrow {
+  color: var(--stamp);
+  font-weight: 500;
+}
+.focus-strip-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.focus-strip-hint { margin-left: auto; }
+
+.focus-strip-body {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+/* "Focus Now" primary toggle */
+.focus-now {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms, border-color 140ms, color 140ms;
+  min-width: 240px;
+}
+.focus-now:hover {
+  border-color: var(--stamp);
+}
+.focus-now--on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.focus-now--on:hover { border-color: var(--stamp); }
+
+.focus-now-dot {
+  font-size: 0.55rem;
+  color: var(--stamp);
+  animation: focus-pulse 2s ease-in-out infinite;
+}
+.focus-now--on .focus-now-dot { color: var(--paper); }
+@keyframes focus-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.focus-now-body {
+  display: grid;
+  gap: 0.15rem;
+}
+.focus-now-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.focus-now-sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.focus-now--on .focus-now-sub { color: rgba(255, 255, 255, 0.6); }
+
+/* Tempo chips */
+.tempo-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+.tempo-chip {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.65rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+  transition: background 140ms, border-color 140ms;
+}
+.tempo-chip:hover { background: var(--hover); }
+.tempo-chip--on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.tempo-chip-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.tempo-chip-sub {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.tempo-chip--on .tempo-chip-sub { color: rgba(255, 255, 255, 0.6); }
+
+.focus-reset {
+  background: transparent;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  cursor: pointer;
+  padding: 0 0.6rem;
+  align-self: center;
+}
+.focus-reset:hover { color: var(--stamp); }
+
+@media (max-width: 900px) {
+  .focus-strip { padding: 0.9rem 1.25rem; }
+  .focus-strip-body {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+  .focus-now { min-width: 0; }
+  .tempo-chips { grid-template-columns: repeat(4, 1fr); }
+}
