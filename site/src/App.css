@@ -750,6 +750,14 @@ body {
   border-bottom: 1px solid var(--rule);
 }
 
+.player-titleblock {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
 .player-cover {
   width: 48px;
   height: 48px;
@@ -771,6 +779,12 @@ body {
   background: var(--stamp-soft);
   font-weight: 600;
   white-space: nowrap;
+  transition: color 200ms, border-color 200ms, background 200ms;
+}
+.player-now--paused {
+  color: var(--ink-mute);
+  border-color: var(--rule);
+  background: transparent;
 }
 .player-now::after {
   content: "";
@@ -783,9 +797,114 @@ body {
   vertical-align: 1px;
   animation: bell-pulse 1.6s ease-in-out infinite;
 }
+.player-now--paused::after {
+  background: var(--ink-mute);
+  animation: none;
+}
 @keyframes bell-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.3; transform: scale(0.7); }
+}
+
+/* Play/pause toggle — our own, driven by Widget API */
+.player-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 140ms;
+  padding: 0;
+}
+.player-toggle:hover {
+  background: var(--stamp);
+  border-color: var(--stamp);
+}
+
+/* Player body — viz + scrubber */
+.player-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.25rem;
+  padding: 0.55rem 1.5rem 0.5rem;
+  align-items: center;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.player-viz-wrap {
+  --viz-ink: var(--ink);
+  min-width: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: 0.15rem;
+}
+.viz {
+  display: block;
+  width: 100%;
+  color: var(--ink);
+}
+
+.player-scrubber {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.player-scrub-rail {
+  height: 4px;
+  background: var(--rule-soft);
+  position: relative;
+  overflow: hidden;
+}
+.player-scrub-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ink);
+  transition: width 200ms linear;
+}
+.player-scrubber:hover .player-scrub-fill { background: var(--stamp); }
+.player-scrub-times {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.player-scrub-times .muted { color: var(--ink-mute); }
+
+/* Volume note + hidden Mixcloud iframe */
+.player-volume-note {
+  padding: 0.35rem 1.5rem 0.4rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.7rem;
+  color: var(--ink-mute);
+  border-top: 1px dashed var(--rule-soft);
+  background: var(--paper-sunk);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.player-volume-note kbd {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-style: normal;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  letter-spacing: 0.05em;
 }
 
 .player-artist {
@@ -839,13 +958,19 @@ body {
   background: var(--stamp-soft);
 }
 
+/* Mixcloud iframe kept alive for audio + Widget API, visually hidden.
+   Their cross-origin iframe doesn't expose volume or chrome we want to show. */
 .player-iframe-wrap {
-  padding: 0.5rem 1.5rem 0.75rem;
-  background: var(--paper);
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
 }
 .player-iframe-wrap iframe {
   display: block;
-  width: 100%;
+  width: 400px;
   height: 60px;
   border: 0;
 }
@@ -910,4 +1035,10 @@ body {
 
   .player-artist { max-width: 55%; font-size: 1rem; }
   .player-meta { display: none; }
+  .player-body {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.4rem 1.25rem 0.5rem;
+  }
+  .player-volume-note { padding: 0.3rem 1.25rem; font-size: 0.62rem; }
 }
