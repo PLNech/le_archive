@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePlayerStore } from "../hooks/usePlayerStore";
+import { useAudioAnalyser } from "../hooks/useAudioAnalyser";
 import { Visualizer } from "./Visualizer";
 
 declare global {
@@ -88,6 +89,7 @@ export function Player() {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(current?.duration ?? 0);
   const scriptReady = useMixcloudScript();
+  const analyser = useAudioAnalyser();
 
   useEffect(() => {
     if (!scriptReady || !iframeRef.current || !window.Mixcloud || !current) {
@@ -193,7 +195,15 @@ export function Player() {
 
       <div className="player-body">
         <div className="player-viz-wrap">
-          <Visualizer playing={playing} height={40} bars={36} />
+          <Visualizer
+            playing={playing}
+            height={40}
+            bars={36}
+            getAnalyser={analyser.active ? analyser.getAnalyser : undefined}
+          />
+          <div className="player-viz-mode">
+            {analyser.active ? "real FFT · tab audio" : "generative · no audio access"}
+          </div>
         </div>
 
         <div className="player-scrubber" onClick={seekTo}>
@@ -215,12 +225,38 @@ export function Player() {
 
       <div className="player-volume-note">
         <span>
-          volume: use the browser tab audio controls —
-          {" "}
-          Mixcloud's embed doesn't expose it to us.
+          {analyser.active ? (
+            <>
+              real FFT live —{" "}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={analyser.stop}
+              >
+                stop audio sync
+              </button>
+            </>
+          ) : analyser.supported ? (
+            <>
+              want real FFT?{" "}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={analyser.requestSync}
+                title="share this tab (with 'share audio' ticked) — we'll tap your own output stream for spectrum analysis"
+              >
+                sync tab audio
+              </button>
+              {analyser.error && (
+                <span className="volume-err"> · {analyser.error}</span>
+              )}
+            </>
+          ) : (
+            <>tab-audio capture not supported in this browser</>
+          )}
         </span>
         <span>
-          <kbd>space</kbd> pauses soon
+          volume lives in the browser tab — Mixcloud doesn't expose it.
         </span>
       </div>
 

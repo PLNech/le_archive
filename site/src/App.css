@@ -850,6 +850,33 @@ body {
   width: 100%;
   color: var(--ink);
 }
+.player-viz-mode {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding-top: 0.2rem;
+  text-align: right;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--stamp);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: var(--font-mono);
+  font-style: normal;
+}
+.link-btn:hover { color: var(--ink); }
+.volume-err {
+  color: var(--stamp);
+  font-style: italic;
+}
 
 .player-scrubber {
   display: flex;
