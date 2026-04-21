@@ -607,6 +607,15 @@ body {
   font-family: var(--font-display);
   margin: 0 0 0.55rem;
 }
+.facet-hint-mech {
+  font-family: var(--font-mono);
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.55rem;
+  color: var(--ink-mute);
+  opacity: 0.75;
+}
 
 .facet-search {
   width: 100%;

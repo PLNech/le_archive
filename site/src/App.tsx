@@ -65,7 +65,10 @@ function App() {
         <aside className="filters">
           <section className="facet-section">
             <h3>Curriculum</h3>
-            <p className="facet-hint">recurring event series</p>
+            <p className="facet-hint">
+              recurring event series
+              <span className="facet-hint-mech"> · select one or more</span>
+            </p>
             <CountedRefinementList
               attribute="event"
               limit={10}
@@ -75,7 +78,10 @@ function App() {
           </section>
           <section className="facet-section">
             <h3>Faculty</h3>
-            <p className="facet-hint">the artists who taught</p>
+            <p className="facet-hint">
+              the artists who taught
+              <span className="facet-hint-mech"> · select one or more</span>
+            </p>
             <CountedRefinementList
               attribute="artists"
               limit={10}
@@ -85,7 +91,10 @@ function App() {
           </section>
           <section className="facet-section">
             <h3>Marginalia</h3>
-            <p className="facet-hint">tags noted in the catalog</p>
+            <p className="facet-hint">
+              tags noted in the catalog
+              <span className="facet-hint-mech"> · select one or more</span>
+            </p>
             <CountedRefinementList
               attribute="tags"
               limit={10}
