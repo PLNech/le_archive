@@ -144,6 +144,15 @@ export function Player() {
     }
   };
 
+  // Global space-to-toggle shortcut dispatches a CustomEvent we listen for.
+  useEffect(() => {
+    const onToggle = () => {
+      widgetRef.current?.togglePlay().catch(() => { /* swallow */ });
+    };
+    window.addEventListener("player:toggle", onToggle);
+    return () => window.removeEventListener("player:toggle", onToggle);
+  }, []);
+
   const seekTo = async (e: React.MouseEvent<HTMLDivElement>) => {
     const w = widgetRef.current;
     if (!w || duration <= 0) return;
@@ -180,7 +189,7 @@ export function Player() {
           className="player-toggle"
           onClick={toggle}
           aria-label={playing ? "pause" : "play"}
-          title={playing ? "pause" : "play"}
+          title={`${playing ? "pause" : "play"} · space`}
         >
           {playing ? "❙❙" : "▶"}
         </button>
@@ -189,7 +198,7 @@ export function Player() {
           className="player-close"
           onClick={stop}
           aria-label="close player"
-          title="close player"
+          title="close player · Esc"
         >
           ✕
         </button>

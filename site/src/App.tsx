@@ -16,6 +16,7 @@ import { SchoolMap } from "./components/SchoolMap";
 import { ArtistModal } from "./components/ArtistModal";
 import { FocusStrip } from "./components/FocusStrip";
 import { useFocusStore, composeFocusFilters } from "./hooks/useFocusStore";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import "./App.css";
 
 function capitalize(s: string): string {
@@ -26,6 +27,7 @@ function App() {
   const focusNow = useFocusStore((s) => s.focusNow);
   const tempo = useFocusStore((s) => s.tempo);
   const filters = composeFocusFilters({ focusNow, tempo });
+  useKeyboardShortcuts();
 
   return (
     <InstantSearch searchClient={searchClient} indexName={INDEX_NAME}>

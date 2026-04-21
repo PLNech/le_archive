@@ -1,5 +1,6 @@
 import { useFocusStore } from "../hooks/useFocusStore";
 import type { TempoSelection } from "../hooks/useFocusStore";
+import { useAudioCoverage } from "../hooks/useAudioCoverage";
 
 const TEMPO_OPTIONS: { value: TempoSelection; label: string; sub: string }[] = [
   { value: "any", label: "all", sub: "any tempo" },
@@ -23,12 +24,31 @@ export function FocusStrip() {
   const setTempo = useFocusStore((s) => s.setTempo);
   const reset = useFocusStore((s) => s.reset);
   const anyActive = focusNow || tempo !== "any";
+  const coverage = useAudioCoverage();
+  const coveragePct =
+    coverage && coverage.total > 0
+      ? Math.round((coverage.analyzed / coverage.total) * 100)
+      : 0;
 
   return (
     <section className="focus-strip" aria-label="focus-mode filters">
       <div className="focus-strip-head">
         <span className="focus-strip-eyebrow">Fig. 2</span>
         <span className="focus-strip-title">Seminar console</span>
+        {coverage && (
+          <span className="focus-coverage" title="sets with P6 audio features">
+            <span className="focus-coverage-bar" aria-hidden>
+              <span
+                className="focus-coverage-fill"
+                style={{ width: `${coveragePct}%` }}
+              />
+            </span>
+            <span className="focus-coverage-label">
+              {coverage.analyzed.toLocaleString("nl-NL")} /{" "}
+              {coverage.total.toLocaleString("nl-NL")} analyzed
+            </span>
+          </span>
+        )}
         <span className="focus-strip-hint">
           <span className="facet-hint-mech">AUDIO-DERIVED · EXCLUDES UN-ANALYZED</span>
         </span>

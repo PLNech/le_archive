@@ -1565,6 +1565,34 @@ body {
 }
 .focus-strip-hint { margin-left: auto; }
 
+.focus-coverage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.focus-coverage-bar {
+  display: inline-block;
+  width: 120px;
+  height: 3px;
+  background: var(--rule-soft);
+  position: relative;
+  overflow: hidden;
+}
+.focus-coverage-fill {
+  display: block;
+  height: 100%;
+  background: var(--stamp);
+  transition: width 400ms ease-out;
+}
+.focus-coverage-label {
+  font-variant-numeric: tabular-nums;
+}
+
 .focus-strip-body {
   display: grid;
   grid-template-columns: auto 1fr auto;
