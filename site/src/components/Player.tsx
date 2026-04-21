@@ -99,23 +99,25 @@ export function Player() {
 
     widget.ready.then(async () => {
       if (!mounted) return;
+
+      // Events only exist after ready resolves
+      widget.events.play?.on(() => mounted && setPlaying(true));
+      widget.events.pause?.on(() => mounted && setPlaying(false));
+      widget.events.ended?.on(() => mounted && setPlaying(false));
+      widget.events.progress?.on((pos, dur) => {
+        if (!mounted) return;
+        setPosition(pos);
+        if (dur) setDuration(dur);
+      });
+
       try {
         const d = await widget.getDuration();
         if (mounted && d) setDuration(d);
         const paused = await widget.getIsPaused();
         if (mounted) setPlaying(!paused);
       } catch {
-        /* ignore — widget may not respond on first tick */
+        /* widget may not respond on first tick */
       }
-    });
-
-    widget.events.play.on(() => mounted && setPlaying(true));
-    widget.events.pause.on(() => mounted && setPlaying(false));
-    widget.events.ended.on(() => mounted && setPlaying(false));
-    widget.events.progress.on((pos, dur) => {
-      if (!mounted) return;
-      setPosition(pos);
-      if (dur) setDuration(dur);
     });
 
     return () => {
