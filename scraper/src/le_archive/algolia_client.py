@@ -16,7 +16,9 @@ def _repo_root() -> Path:
 
 
 def load_env() -> None:
-    load_dotenv(_repo_root() / ".env")
+    # override=True so repo .env wins over shell-exported ALGOLIA_* vars
+    # (user's shell exports work-account keys which shadow project creds otherwise).
+    load_dotenv(_repo_root() / ".env", override=True)
 
 
 def client() -> SearchClientSync:
