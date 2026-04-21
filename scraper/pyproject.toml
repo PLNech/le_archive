@@ -1,0 +1,27 @@
+[project]
+name = "le-archive"
+version = "0.1.0"
+description = "Scraper + enricher for De School Amsterdam archive"
+authors = [
+    {name = "Paul-Louis NECH", email = "paullouis.nech@algolia.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "httpx>=0.27",
+    "selectolax>=0.3.21",
+    "tenacity>=9.0",
+    "algoliasearch>=4.0",
+    "tqdm>=4.66",
+    "python-dotenv>=1.0",
+]
+
+[tool.poetry]
+packages = [{include = "le_archive", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8"

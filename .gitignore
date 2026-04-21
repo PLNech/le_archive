@@ -1,0 +1,33 @@
+# secrets
+.env
+.env.local
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# scraper data artifacts
+scraper/data/raw_sets.json
+scraper/data/artists.json
+scraper/data/cache/
+scraper/data/*.log
+
+# node
+node_modules/
+site/dist/
+.vite/
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.idea/
+.vscode/
