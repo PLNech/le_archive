@@ -70,6 +70,7 @@ export function Hit({ hit }: Props) {
                 mixcloudUrl: hit.mixcloud_url!,
                 coverUrl: hit.cover_url,
                 duration: hit.duration,
+                fingerprint: hit.viz_fingerprint,
               })
             }
           >

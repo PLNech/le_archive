@@ -14,6 +14,8 @@ dependencies = [
     "algoliasearch>=4.0",
     "tqdm>=4.66",
     "python-dotenv>=1.0",
+    "librosa>=0.10",
+    "numpy>=1.26",
 ]
 
 [tool.poetry]

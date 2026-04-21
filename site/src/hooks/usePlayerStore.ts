@@ -9,6 +9,12 @@ export type PlayingSet = {
   mixcloudUrl: string;
   coverUrl?: string;
   duration?: number;
+  fingerprint?: {
+    bands: number;
+    frame_seconds: number;
+    n_frames: number;
+    data_b64: string;
+  };
 };
 
 type PlayerState = {

@@ -26,4 +26,15 @@ export type SetRecord = {
   focus_score?: number;
   tempo_bucket?: "slow" | "mid" | "fast";
   bpm?: number;
+  brightness?: number;
+  noisiness?: number;
+  energy_mean?: number;
+  energy_dynamic_range?: number;
+  energy_curve?: number[];
+  viz_fingerprint?: {
+    bands: number;
+    frame_seconds: number;
+    n_frames: number;
+    data_b64: string;
+  };
 };

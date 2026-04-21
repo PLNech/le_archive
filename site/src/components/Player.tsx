@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePlayerStore } from "../hooks/usePlayerStore";
 import { useAudioAnalyser } from "../hooks/useAudioAnalyser";
+import { useFingerprint } from "../hooks/useFingerprint";
 import { Visualizer } from "./Visualizer";
 
 declare global {
@@ -90,6 +91,7 @@ export function Player() {
   const [duration, setDuration] = useState(current?.duration ?? 0);
   const scriptReady = useMixcloudScript();
   const analyser = useAudioAnalyser();
+  const fingerprint = useFingerprint(current?.fingerprint);
 
   useEffect(() => {
     if (!scriptReady || !iframeRef.current || !window.Mixcloud || !current) {
@@ -200,9 +202,15 @@ export function Player() {
             height={40}
             bars={36}
             getAnalyser={analyser.active ? analyser.getAnalyser : undefined}
+            fingerprint={fingerprint ?? undefined}
+            fingerprintPosition={position}
           />
           <div className="player-viz-mode">
-            {analyser.active ? "real FFT · tab audio" : "generative · no audio access"}
+            {analyser.active
+              ? "real FFT · tab audio"
+              : fingerprint
+                ? "fingerprint · pre-analyzed spectra"
+                : "generative · no audio access"}
           </div>
         </div>
 
