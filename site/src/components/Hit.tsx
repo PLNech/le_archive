@@ -1,6 +1,7 @@
 import type { SetRecord } from "../types";
 import { usePlayerStore } from "../hooks/usePlayerStore";
 import { useArtistModal } from "../hooks/useArtistModal";
+import { useFavoritesStore } from "../hooks/useFavoritesStore";
 
 type Props = { hit: SetRecord };
 
@@ -14,6 +15,8 @@ function fmtDuration(seconds?: number): string {
 export function Hit({ hit }: Props) {
   const play = usePlayerStore((s) => s.play);
   const openArtist = useArtistModal((s) => s.open);
+  const isFav = useFavoritesStore((s) => Boolean(s.ids[hit.objectID]));
+  const toggleFav = useFavoritesStore((s) => s.toggle);
   const canPlay = Boolean(hit.mixcloud_url);
   const duration = fmtDuration(hit.duration);
 
@@ -56,6 +59,16 @@ export function Hit({ hit }: Props) {
           ))}
         </div>
         <div className="cell hit-action">
+          <button
+            className={`fav-btn ${isFav ? "fav-btn--on" : ""}`}
+            onClick={() => toggleFav(hit.objectID)}
+            aria-label={isFav ? "remove from favorites" : "add to favorites"}
+            aria-pressed={isFav}
+            title={isFav ? "remove bookmark" : "bookmark this set"}
+            type="button"
+          >
+            {isFav ? "★" : "☆"}
+          </button>
           <button
             className="play-btn"
             disabled={!canPlay}

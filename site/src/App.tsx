@@ -15,7 +15,12 @@ import { YearTimeline } from "./components/YearTimeline";
 import { SchoolMap } from "./components/SchoolMap";
 import { ArtistModal } from "./components/ArtistModal";
 import { FocusStrip } from "./components/FocusStrip";
+import { FavoritesToggle } from "./components/FavoritesToggle";
 import { useFocusStore, composeFocusFilters } from "./hooks/useFocusStore";
+import {
+  useFavoritesStore,
+  composeFavoritesFilters,
+} from "./hooks/useFavoritesStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import "./App.css";
 
@@ -26,7 +31,18 @@ function capitalize(s: string): string {
 function App() {
   const focusNow = useFocusStore((s) => s.focusNow);
   const tempo = useFocusStore((s) => s.tempo);
-  const filters = composeFocusFilters({ focusNow, tempo });
+  const focusFilter = composeFocusFilters({ focusNow, tempo });
+
+  const onlyFav = useFavoritesStore((s) => s.onlyFavorites);
+  const favIdsMap = useFavoritesStore((s) => s.ids);
+  const favIds = Object.keys(favIdsMap);
+  const favFilter = onlyFav ? composeFavoritesFilters(favIds) : "";
+
+  const filters = [focusFilter, favFilter]
+    .filter(Boolean)
+    .map((f) => `(${f})`)
+    .join(" AND ");
+
   useKeyboardShortcuts();
 
   return (
@@ -121,6 +137,7 @@ function App() {
                   `${nbHits.toLocaleString("nl-NL")} set${nbHits === 1 ? "" : "s"} on file`,
               }}
             />
+            <FavoritesToggle />
             <SortBy
               items={[
                 { value: INDEX_NAME, label: "by relevance" },
