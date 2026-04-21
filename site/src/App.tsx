@@ -7,6 +7,7 @@ import {
   SortBy,
   Configure,
 } from "react-instantsearch";
+import { history } from "instantsearch.js/es/lib/routers";
 import { searchClient, INDEX_NAME, hasCredentials } from "./lib/algolia";
 import { Hit } from "./components/Hit";
 import { Player } from "./components/Player";
@@ -46,7 +47,12 @@ function App() {
   useKeyboardShortcuts();
 
   return (
-    <InstantSearch searchClient={searchClient} indexName={INDEX_NAME}>
+    <InstantSearch
+      searchClient={searchClient}
+      indexName={INDEX_NAME}
+      routing={{ router: history() }}
+      future={{ preserveSharedStateOnUnmount: true }}
+    >
       <Configure hitsPerPage={20} filters={filters || undefined} />
       <header className="app-header">
         <div className="masthead">
