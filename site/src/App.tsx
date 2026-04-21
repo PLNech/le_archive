@@ -12,6 +12,7 @@ import { Hit } from "./components/Hit";
 import { Player } from "./components/Player";
 import { CountedRefinementList } from "./components/CountedRefinementList";
 import { YearTimeline } from "./components/YearTimeline";
+import { SchoolMap } from "./components/SchoolMap";
 import "./App.css";
 
 function capitalize(s: string): string {
@@ -57,13 +58,10 @@ function App() {
         <YearTimeline />
       </section>
 
+      <SchoolMap />
+
       <div className="layout">
         <aside className="filters">
-          <section className="facet-section">
-            <h3>Departments</h3>
-            <p className="facet-hint">physical rooms of the school</p>
-            <CountedRefinementList attribute="space" limit={12} />
-          </section>
           <section className="facet-section">
             <h3>Curriculum</h3>
             <p className="facet-hint">recurring event series</p>
