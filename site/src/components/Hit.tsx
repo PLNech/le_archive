@@ -1,5 +1,6 @@
 import type { SetRecord } from "../types";
 import { usePlayerStore } from "../hooks/usePlayerStore";
+import { useArtistModal } from "../hooks/useArtistModal";
 
 type Props = { hit: SetRecord };
 
@@ -12,6 +13,7 @@ function fmtDuration(seconds?: number): string {
 
 export function Hit({ hit }: Props) {
   const play = usePlayerStore((s) => s.play);
+  const openArtist = useArtistModal((s) => s.open);
   const canPlay = Boolean(hit.mixcloud_url);
   const duration = fmtDuration(hit.duration);
 
@@ -24,7 +26,22 @@ export function Hit({ hit }: Props) {
           ) : (
             <span className="hit-cover hit-cover-placeholder" aria-hidden />
           )}
-          <span className="hit-artists-text">{hit.artists.join(" · ") || "—"}</span>
+          <span className="hit-artists-text">
+            {hit.artists.length === 0
+              ? "—"
+              : hit.artists.map((a, i) => (
+                  <span key={`${a}-${i}`}>
+                    {i > 0 && <span className="artist-sep"> · </span>}
+                    <button
+                      type="button"
+                      className="artist-link"
+                      onClick={() => openArtist(a)}
+                    >
+                      {a}
+                    </button>
+                  </span>
+                ))}
+          </span>
         </div>
         <div className="cell">{hit.date}</div>
         <div className="cell">{hit.space}</div>

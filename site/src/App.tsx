@@ -13,6 +13,7 @@ import { Player } from "./components/Player";
 import { CountedRefinementList } from "./components/CountedRefinementList";
 import { YearTimeline } from "./components/YearTimeline";
 import { SchoolMap } from "./components/SchoolMap";
+import { ArtistModal } from "./components/ArtistModal";
 import "./App.css";
 
 function capitalize(s: string): string {
@@ -115,6 +116,7 @@ function App() {
       </div>
 
       <Player />
+      <ArtistModal />
     </InstantSearch>
   );
 }
