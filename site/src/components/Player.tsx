@@ -17,24 +17,34 @@ export function Player() {
 
   if (!current) return null;
   return (
-    <div className="player">
-      <div className="player-meta">
-        <strong>{current.artists.join(" · ")}</strong>
-        <span>
-          {current.date} · {current.space} · {current.event}
+    <div className="player" role="region" aria-label="audio player">
+      <div className="player-head">
+        <span className="player-now">now playing</span>
+        <span className="player-artist">{current.artists.join(" · ")}</span>
+        <span className="player-meta">
+          {current.date}
+          <span className="dot">·</span>
+          {current.space}
+          <span className="dot">·</span>
+          {current.event}
         </span>
-        <button className="player-close" onClick={stop} aria-label="close player">
-          ×
+        <button
+          className="player-close"
+          onClick={stop}
+          aria-label="close player"
+          title="close player"
+        >
+          ✕
         </button>
       </div>
-      <iframe
-        title="Mixcloud player"
-        src={widgetSrc(current.mixcloudUrl)}
-        width="100%"
-        height="60"
-        frameBorder={0}
-        allow="autoplay"
-      />
+      <div className="player-iframe-wrap">
+        <iframe
+          title={`Mixcloud — ${current.artists.join(" · ")}`}
+          src={widgetSrc(current.mixcloudUrl)}
+          frameBorder={0}
+          allow="autoplay"
+        />
+      </div>
     </div>
   );
 }

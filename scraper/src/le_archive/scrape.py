@@ -176,7 +176,10 @@ def build_set(row: dict, mixcloud_url: str | None) -> Set:
         detail_url=f"{BASE}/sets/{row['slug']}/",
         mixcloud_url=mixcloud_url,
         _enrichment={
-            "mixcloud": mixcloud_url is not None,
+            # Each flag = "API has been queried successfully" (not "URL known").
+            # mixcloud_url presence alone says the iframe URL exists; enrichment
+            # runs fetch api.mixcloud.com for duration/tags/plays/tracklist.
+            "mixcloud": False,
             "artists": False,
             "mood": False,
             "audio": False,
