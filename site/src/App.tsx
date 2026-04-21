@@ -2,7 +2,6 @@ import {
   InstantSearch,
   SearchBox,
   Hits,
-  RefinementList,
   Pagination,
   Stats,
   SortBy,
@@ -11,17 +10,37 @@ import {
 import { searchClient, INDEX_NAME, hasCredentials } from "./lib/algolia";
 import { Hit } from "./components/Hit";
 import { Player } from "./components/Player";
+import { CountedRefinementList } from "./components/CountedRefinementList";
+import { YearTimeline } from "./components/YearTimeline";
 import "./App.css";
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 function App() {
   return (
     <InstantSearch searchClient={searchClient} indexName={INDEX_NAME}>
       <Configure hitsPerPage={20} />
       <header className="app-header">
-        <h1>LeArchive</h1>
-        <p className="tagline">De School Amsterdam · 2016–2024</p>
+        <div className="masthead">
+          <div className="masthead-stamp">Het Archief</div>
+          <h1 className="masthead-title">
+            <span className="masthead-title-main">De School</span>
+            <span className="masthead-title-sub">Amsterdam</span>
+          </h1>
+          <div className="masthead-tomb">
+            <span>2016</span>
+            <span className="tomb-dash" aria-hidden>—</span>
+            <span>2024</span>
+            <span className="tomb-sep">·</span>
+            <span>891 sets</span>
+            <span className="tomb-sep">·</span>
+            <span className="tomb-note">a polytechnic, not a club</span>
+          </div>
+        </div>
         <SearchBox
-          placeholder="search artists, events, spaces…"
+          placeholder="search faculty, curriculum, departments…"
           className="search-box"
         />
       </header>
@@ -34,38 +53,61 @@ function App() {
         </div>
       )}
 
+      <section className="timeline-section">
+        <YearTimeline />
+      </section>
+
       <div className="layout">
         <aside className="filters">
-          <section>
-            <h3>year</h3>
-            <RefinementList attribute="year" limit={10} sortBy={["name:desc"]} />
+          <section className="facet-section">
+            <h3>Departments</h3>
+            <p className="facet-hint">physical rooms of the school</p>
+            <CountedRefinementList attribute="space" limit={12} />
           </section>
-          <section>
-            <h3>space</h3>
-            <RefinementList attribute="space" limit={10} />
+          <section className="facet-section">
+            <h3>Curriculum</h3>
+            <p className="facet-hint">recurring event series</p>
+            <CountedRefinementList
+              attribute="event"
+              limit={10}
+              searchable
+              searchablePlaceholder="search events…"
+            />
           </section>
-          <section>
-            <h3>event</h3>
-            <RefinementList attribute="event" limit={10} searchable />
+          <section className="facet-section">
+            <h3>Faculty</h3>
+            <p className="facet-hint">the artists who taught</p>
+            <CountedRefinementList
+              attribute="artists"
+              limit={10}
+              searchable
+              searchablePlaceholder="search artists…"
+            />
           </section>
-          <section>
-            <h3>artist</h3>
-            <RefinementList attribute="artists" limit={10} searchable />
-          </section>
-          <section>
-            <h3>tags</h3>
-            <RefinementList attribute="tags" limit={10} />
+          <section className="facet-section">
+            <h3>Marginalia</h3>
+            <p className="facet-hint">tags noted in the catalog</p>
+            <CountedRefinementList
+              attribute="tags"
+              limit={10}
+              formatLabel={capitalize}
+            />
           </section>
         </aside>
 
         <main className="results">
           <div className="results-toolbar">
-            <Stats />
+            <Stats
+              translations={{
+                rootElementText: ({ nbHits }) =>
+                  `${nbHits.toLocaleString("nl-NL")} set${nbHits === 1 ? "" : "s"} on file`,
+              }}
+            />
             <SortBy
               items={[
-                { value: INDEX_NAME, label: "relevance" },
-                { value: `${INDEX_NAME}_newest`, label: "newest" },
-                { value: `${INDEX_NAME}_oldest`, label: "oldest" },
+                { value: INDEX_NAME, label: "by relevance" },
+                { value: `${INDEX_NAME}_newest`, label: "newest first" },
+                { value: `${INDEX_NAME}_oldest`, label: "oldest first" },
               ]}
             />
           </div>

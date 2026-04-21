@@ -21,9 +21,9 @@ SETTINGS = {
     ],
     "attributesForFaceting": [
         "searchable(artists)",
+        "searchable(event)",
         "year",
         "space",
-        "event",
         "tags",
         "is_b2b",
         # Populated in later phases; safe to declare early.
