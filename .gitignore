@@ -18,6 +18,8 @@ scraper/data/raw_sets.json
 scraper/data/artists.json
 scraper/data/cache/
 scraper/data/*.log
+scraper/data/*.bak
+scraper/data/eval_*.json
 
 # node
 node_modules/
