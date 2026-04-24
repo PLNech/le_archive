@@ -364,11 +364,15 @@ def main() -> int:
 
     all_artists: list[str] = []
     seen: set[str] = set()
+    n_sets_per_artist: dict[str, int] = {}
     for r in records:
         for a in (r.get("artists") or []):
-            if a and a not in seen:
+            if not a:
+                continue
+            if a not in seen:
                 seen.add(a)
                 all_artists.append(a)
+            n_sets_per_artist[a] = n_sets_per_artist.get(a, 0) + 1
     print(f"[phase4b] {len(all_artists)} unique artists across archive")
 
     def is_pending(a: str) -> bool:
@@ -444,13 +448,15 @@ def main() -> int:
                 tqdm.write(f"  fail {name}: {e}")
                 continue
 
-            # Phase A disambiguation gate — reject obvious wrong-person matches
-            # (k-pop / metal / pre-2016 death dates). Only skip the gate when an
-            # override is in play — the user has already hand-picked the target.
+            # Disambiguation gate — reject obvious wrong-person matches
+            # (k-pop / metal / pre-2016 death dates / tag-polarity collisions).
+            # Only skip when an override is in play — user hand-picked the target.
             if not (overrides.get(name) or {}).get("action"):
-                rejected, reason = phase_a_reject(row)
+                rejected, reason = phase_a_reject(
+                    row, n_sets_for_artist=n_sets_per_artist.get(name, 0)
+                )
                 if rejected:
-                    tqdm.write(f"  phase-A reject {name}: {reason}")
+                    tqdm.write(f"  disambig reject {name}: {reason}")
                     row = {
                         "name": name,
                         "_enriched": True,

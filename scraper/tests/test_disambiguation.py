@@ -114,3 +114,52 @@ def test_living_artist_with_birth_year() -> None:
     }
     rejected, _ = reject(row)
     assert not rejected
+
+
+# --- Layer B: tag polarity (requires n_sets_for_artist) ---
+
+def test_layer_b_rejects_recurring_booking_without_electronic_tag() -> None:
+    """Julie — real wrong match: 6 De School sets, but tags are shoegaze/noise pop."""
+    row = {
+        "tags": ["shoegaze", "noise pop", "noise rock", "grunge", "pop"],
+        "bio_snippet": "julie is an American shoegaze band from Los Angeles.",
+    }
+    rejected, reason = reject(row, n_sets_for_artist=6)
+    assert rejected
+    assert "tag polarity" in reason.lower()
+
+
+def test_layer_b_ignores_single_booking() -> None:
+    """n=1 means we lack the booking-pattern prior — skip the tag-polarity check."""
+    row = {"tags": ["shoegaze", "noise pop", "noise rock"]}
+    rejected, _ = reject(row, n_sets_for_artist=1)
+    assert not rejected
+
+
+def test_layer_b_ignores_thin_tag_data() -> None:
+    """Fewer than 3 Last.fm tags = not enough signal. Don't fire."""
+    row = {"tags": ["netherlands", "dj"]}
+    rejected, _ = reject(row, n_sets_for_artist=5)
+    assert not rejected
+
+
+def test_layer_b_keeps_electronic_in_top_3() -> None:
+    """Electronic marker anywhere in top-3 vouches for the dossier."""
+    row = {"tags": ["netherlands", "dj", "techno", "amsterdam"]}
+    rejected, _ = reject(row, n_sets_for_artist=5)
+    assert not rejected
+
+
+def test_layer_b_without_n_sets_kwarg_is_layer_a_only() -> None:
+    """Backwards-compatible: no n_sets → only Layer A runs."""
+    # Shoegaze tags (would trip Layer B if n_sets were passed); no blacklist hit.
+    row = {"tags": ["shoegaze", "noise pop", "noise rock"]}
+    rejected, _ = reject(row)
+    assert not rejected
+
+
+def test_layer_b_respects_electronic_positive_list() -> None:
+    """A well-tagged cloud rap act (legitimate De School booking) stays."""
+    row = {"tags": ["cloud rap", "hip-hop", "experimental"]}
+    rejected, _ = reject(row, n_sets_for_artist=3)
+    assert not rejected
