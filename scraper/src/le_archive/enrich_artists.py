@@ -57,6 +57,7 @@ JUNK_TAGS = {
 ROOT = Path(__file__).resolve().parents[3]
 RAW_PATH = ROOT / "scraper" / "data" / "raw_sets.json"
 ARTISTS_PATH = ROOT / "scraper" / "data" / "artists.json"
+OVERRIDES_PATH = ROOT / "scraper" / "data" / "artist_overrides.json"
 
 DISCOGS_BASE = "https://api.discogs.com"
 LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
@@ -143,14 +144,30 @@ def build_artist_record(
     lastfm_key: str,
     name: str,
     delay_s: float,
+    override: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Hit both APIs and return a flattened cache row for this artist."""
+    """Hit both APIs and return a flattened cache row for this artist.
+
+    `override` lets the caller redirect the search (e.g. "Boris" → "Boris Werner")
+    or pin to a specific Discogs artist id. See data/artist_overrides.json.
+    """
     row: dict[str, Any] = {"name": name}
+    action = (override or {}).get("action") or ""
+    query = (override or {}).get("query") or name
+    discogs_id = (override or {}).get("discogs_id")
+
+    if action == "skip":
+        row["_enriched"] = True
+        row["_override_skip"] = True
+        return row
 
     # --- Discogs
     time.sleep(delay_s)
     try:
-        hit = discogs_search_artist(client, discogs_token, name)
+        if action == "discogs_id" and discogs_id:
+            hit = {"id": discogs_id, "uri": f"/artist/{discogs_id}"}
+        else:
+            hit = discogs_search_artist(client, discogs_token, query)
     except Exception as e:
         hit = None
         row["discogs_error"] = str(e)[:140]
@@ -175,7 +192,7 @@ def build_artist_record(
     # --- Last.fm
     time.sleep(delay_s)
     try:
-        info = lastfm_get(client, lastfm_key, "artist.getinfo", name)
+        info = lastfm_get(client, lastfm_key, "artist.getinfo", query)
     except Exception as e:
         info = None
         row["lastfm_error"] = str(e)[:140]
@@ -198,7 +215,7 @@ def build_artist_record(
 
     time.sleep(delay_s)
     try:
-        sim = lastfm_get(client, lastfm_key, "artist.getsimilar", name)
+        sim = lastfm_get(client, lastfm_key, "artist.getsimilar", query)
     except Exception:
         sim = None
     if sim and "similarartists" in sim:
@@ -338,6 +355,12 @@ def main() -> int:
         cache = json.loads(ARTISTS_PATH.read_text(encoding="utf-8"))
     print(f"[phase4b] artist cache: {len(cache)} already enriched")
 
+    overrides: dict[str, dict[str, Any]] = {}
+    if OVERRIDES_PATH.exists():
+        overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+        active = [n for n, o in overrides.items() if (o or {}).get("action")]
+        print(f"[phase4b] overrides loaded: {len(overrides)} entries, {len(active)} active")
+
     all_artists: list[str] = []
     seen: set[str] = set()
     for r in records:
@@ -352,6 +375,9 @@ def main() -> int:
         if row is None or not row.get("_enriched"):
             return True
         if args.retry_failed and (row.get("discogs_error") or row.get("lastfm_error")):
+            return True
+        # Audit cleared this dossier; if an override is now active, re-run.
+        if row.get("_cleared_by_audit") and (overrides.get(a) or {}).get("action"):
             return True
         return False
 
@@ -371,7 +397,10 @@ def main() -> int:
     with httpx.Client(headers=headers, timeout=30.0, follow_redirects=True) as http:
         if args.dry_run:
             for name in todo[:3]:
-                row = build_artist_record(http, discogs_token, lastfm_key, name, args.delay)
+                row = build_artist_record(
+                    http, discogs_token, lastfm_key, name, args.delay,
+                    override=overrides.get(name),
+                )
                 print(json.dumps({name: row}, ensure_ascii=False, indent=2))
             return 0
 
@@ -401,7 +430,8 @@ def main() -> int:
         for name in tqdm(todo, desc="artists"):
             try:
                 cache[name] = build_artist_record(
-                    http, discogs_token, lastfm_key, name, args.delay
+                    http, discogs_token, lastfm_key, name, args.delay,
+                    override=overrides.get(name),
                 )
             except Exception as e:
                 tqdm.write(f"  fail {name}: {e}")

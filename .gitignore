@@ -20,6 +20,8 @@ scraper/data/cache/
 scraper/data/*.log
 scraper/data/*.bak
 scraper/data/eval_*.json
+scraper/data/artist_audit.json
+scraper/data/artist_overrides.template.json
 
 # node
 node_modules/
