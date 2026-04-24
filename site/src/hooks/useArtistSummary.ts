@@ -44,6 +44,8 @@ export function useArtistSummary(name: string | null): ArtistStatus {
 
   useEffect(() => {
     if (!name) {
+      // Reset when the modal closes / name clears. Single render, not a cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus({ state: "idle" });
       return;
     }

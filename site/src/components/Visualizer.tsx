@@ -30,11 +30,18 @@ export function Visualizer({
   fingerprintPosition,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Mutable refs so the RAF loop reads fresh values without resubscribing
+  // Mutable refs so the RAF loop reads fresh values without resubscribing.
+  // Kept in sync via effects (refs must never be written during render).
   const positionRef = useRef<number>(fingerprintPosition ?? 0);
-  positionRef.current = fingerprintPosition ?? 0;
   const fingerprintRef = useRef<FingerprintReader | undefined>(fingerprint);
-  fingerprintRef.current = fingerprint;
+
+  useEffect(() => {
+    positionRef.current = fingerprintPosition ?? 0;
+  }, [fingerprintPosition]);
+
+  useEffect(() => {
+    fingerprintRef.current = fingerprint;
+  }, [fingerprint]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,7 +56,7 @@ export function Visualizer({
 
     let raf = 0;
     let mounted = true;
-    let freqBuf: Uint8Array | null = null;
+    let freqBuf: Uint8Array<ArrayBuffer> | null = null;
     let binRanges: Array<[number, number]> | null = null;
     let fpBuf: Uint8Array | null = null;
     let fpMode: "none" | "ready" = "none";
@@ -63,7 +70,7 @@ export function Visualizer({
       ) {
         return;
       }
-      freqBuf = new Uint8Array(analyser.frequencyBinCount);
+      freqBuf = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
       const nyquist = analyser.context.sampleRate / 2;
       const minHz = 40;
       const maxHz = Math.min(16000, nyquist);

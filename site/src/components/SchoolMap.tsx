@@ -38,6 +38,9 @@ export function SchoolMap() {
   const byValue = new Map(items.map((i) => [i.value, i]));
   const maxCount = Math.max(1, ...items.map((i) => i.count));
   const activeCount = items.filter((i) => i.isRefined).length;
+  const activeNums = ROOMS.filter(
+    (r) => byValue.get(r.value)?.isRefined,
+  ).map((r) => r.number);
 
   return (
     <section className="school-map-wrap">
@@ -58,13 +61,27 @@ export function SchoolMap() {
       </header>
 
       <div className="school-map-grid">
-        {/* Blueprint plate — atmospheric backdrop */}
-        <figure className="school-plate">
+        {/* Blueprint plate — atmospheric backdrop with selected-room overlay */}
+        <figure className={`school-plate ${activeCount > 0 ? "school-plate--active" : ""}`}>
           <img
             src="/school-plan.svg"
             alt="Floor plan of De School Amsterdam (1960, adapted 2016)"
             className="school-backdrop"
           />
+          {activeNums.length > 0 && (
+            <div className="school-plate-highlight" aria-hidden>
+              <span className="school-plate-highlight-label">
+                rooms in session
+              </span>
+              <span className="school-plate-highlight-nums">
+                {activeNums.map((n) => (
+                  <span key={n} className="school-plate-num">
+                    {n}
+                  </span>
+                ))}
+              </span>
+            </div>
+          )}
           <figcaption className="school-plate-caption">
             a schematic from hetarchief · not to scale
           </figcaption>

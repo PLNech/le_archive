@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "react";
 import type { SetRecord } from "../types";
 import { usePlayerStore } from "../hooks/usePlayerStore";
 import { useArtistModal } from "../hooks/useArtistModal";
 import { useFavoritesStore } from "../hooks/useFavoritesStore";
+import { trackView, trackClick } from "../lib/insights";
 
 type Props = { hit: SetRecord };
 
@@ -19,9 +21,29 @@ export function Hit({ hit }: Props) {
   const toggleFav = useFavoritesStore((s) => s.toggle);
   const canPlay = Boolean(hit.mixcloud_url);
   const duration = fmtDuration(hit.duration);
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            trackView([hit.objectID]);
+            io.disconnect();
+            return;
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hit.objectID]);
 
   return (
-    <article className="hit">
+    <article className="hit" ref={rootRef}>
       <div className="hit-cells">
         <div className="cell hit-artists">
           {hit.cover_url ? (
@@ -72,8 +94,9 @@ export function Hit({ hit }: Props) {
           <button
             className="play-btn"
             disabled={!canPlay}
-            onClick={() =>
-              canPlay &&
+            onClick={() => {
+              if (!canPlay) return;
+              trackClick(hit.objectID);
               play({
                 objectID: hit.objectID,
                 artists: hit.artists,
@@ -84,8 +107,9 @@ export function Hit({ hit }: Props) {
                 coverUrl: hit.cover_url,
                 duration: hit.duration,
                 fingerprint: hit.viz_fingerprint,
-              })
-            }
+                similarBySound: hit.similar_by_sound,
+              });
+            }}
           >
             {canPlay ? "play" : "—"}
           </button>

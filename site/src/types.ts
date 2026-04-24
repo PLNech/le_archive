@@ -21,6 +21,7 @@ export type SetRecord = {
   mixcloud_tags?: string[];
   cover_url?: string;
   artist_genres?: string[];
+  artist_similar?: string[];
   mood?: string[];
   energy?: number;
   focus_score?: number;
@@ -37,4 +38,5 @@ export type SetRecord = {
     n_frames: number;
     data_b64: string;
   };
+  similar_by_sound?: string[];
 };

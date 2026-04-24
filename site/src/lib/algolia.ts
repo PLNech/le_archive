@@ -6,6 +6,7 @@ const SEARCH_KEY = import.meta.env.VITE_ALGOLIA_SEARCH_API_KEY as
   | undefined;
 
 export const INDEX_NAME = "archive_sets";
+export const ARTISTS_INDEX = "archive_artists";
 
 export const searchClient = (() => {
   if (!APP_ID || !SEARCH_KEY) {

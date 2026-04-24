@@ -25,8 +25,9 @@
 }
 
 /* Brutalist concrete + chalk for dark mode */
+/* System preference — applies when no manual override is set on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper:       #17171a;
     --paper-elev:  #1e1e22;
     --paper-sunk:  #101013;
@@ -40,6 +41,21 @@
     --hover:       rgba(237, 230, 213, 0.05);
     --shadow:      0 -1px 0 rgba(0,0,0,0.3), 0 -16px 48px rgba(0,0,0,0.6);
   }
+}
+/* Manual override (via ThemeToggle) — beats system preference. */
+[data-theme="dark"] {
+  --paper:       #17171a;
+  --paper-elev:  #1e1e22;
+  --paper-sunk:  #101013;
+  --ink:         #ede6d5;
+  --ink-soft:    #a49e94;
+  --ink-mute:    #6e685f;
+  --rule:        #2a2a30;
+  --rule-soft:   #1e1e22;
+  --stamp:       #e26a53;
+  --stamp-soft:  rgba(226, 106, 83, 0.12);
+  --hover:       rgba(237, 230, 213, 0.05);
+  --shadow:      0 -1px 0 rgba(0,0,0,0.3), 0 -16px 48px rgba(0,0,0,0.6);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -92,6 +108,36 @@ body {
   align-items: end;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+/* Theme toggle pinned top-right of the masthead so it never jostles title. */
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--paper-elev);
+  border: 1px solid var(--rule);
+}
+.theme-toggle-chip {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+}
+.theme-toggle-chip:hover { color: var(--ink); }
+.theme-toggle-chip--on {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .masthead-stamp {
@@ -272,13 +318,68 @@ body {
   font-weight: 600;
 }
 
-/* Two-column layout: blueprint plate | room picker list */
-.school-map-grid {
+/* Overview row — the timeline and the map share top space, side by side. */
+.overview-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
   gap: 1.5rem;
+  padding: 0 2.5rem;
   align-items: start;
 }
+.overview-timeline > .timeline-section,
+.overview-row .timeline-section {
+  padding-left: 0;
+  padding-right: 0;
+}
+.overview-map > .school-map-wrap {
+  padding: 1rem 0 0.75rem;
+  border-bottom: none;
+}
+
+@media (max-width: 900px) {
+  .overview-row {
+    grid-template-columns: 1fr;
+    padding: 0 1rem;
+  }
+}
+
+/* Compact stacked layout inside the school-map side panel. */
+.school-map-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+.overview-map .school-plate {
+  max-height: 120px;
+  aspect-ratio: 755.5 / 454.5;
+  width: 100%;
+  box-shadow: 0 0 0 3px var(--paper-elev), 0 0 0 4px var(--rule);
+}
+.overview-map .school-map-title { font-size: 1.1rem; }
+.overview-map .school-map-head {
+  margin-bottom: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.overview-map .school-rooms {
+  max-height: 240px;
+  overflow-y: auto;
+  gap: 0.2rem;
+  padding-right: 2px;
+}
+.overview-map .room-card {
+  padding: 0.3rem 0.55rem 0.2rem;
+  grid-template-columns: 22px 1fr auto;
+}
+.overview-map .room-card-num {
+  width: 18px;
+  height: 18px;
+  font-size: 0.6rem;
+}
+.overview-map .room-card-name { font-size: 0.8rem; }
+.overview-map .room-card-sub { font-size: 0.6rem; }
 
 /* The plan as blueprint plate — cream paths on ink */
 .school-plate {
@@ -320,6 +421,55 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(237, 230, 213, 0.4);
+}
+
+/* Active-room highlight overlay on the plate.
+   We can't pixel-locate rooms on the hetarchief drawing reliably, so we
+   overlay the selected room numbers as a stamp-like badge instead — more
+   honest than a mis-aligned hitbox. */
+.school-plate--active .school-backdrop { opacity: 0.5; }
+.school-plate-highlight {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  gap: 0.35rem;
+}
+.school-plate-highlight-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(237, 230, 213, 0.85);
+}
+.school-plate-highlight-nums {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.school-plate-num {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--stamp);
+  background: var(--paper);
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--stamp);
+  box-shadow: 0 0 0 3px rgba(168, 50, 30, 0.25);
+}
+.overview-map .school-plate-num {
+  width: 20px;
+  height: 20px;
+  font-size: 0.72rem;
+  box-shadow: 0 0 0 2px rgba(168, 50, 30, 0.25);
 }
 
 /* Room picker — cards stacked, each click toggles disjunctive refinement */
@@ -805,7 +955,7 @@ body {
 
 .hit-cells {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 110px minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr) 90px;
+  grid-template-columns: minmax(0, 2fr) 110px minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr) 116px;
   align-items: center;
   padding: 0.6rem 0.4rem;
   gap: 0.6rem;
@@ -818,6 +968,11 @@ body {
   font-size: 0.82rem;
   font-family: var(--font-mono);
   color: var(--ink-soft);
+}
+/* Action cell holds two buttons; never clip their left edge if the row is tight. */
+.hit-cells .cell.hit-action {
+  overflow: visible;
+  padding-left: 0;
 }
 
 .hit-artists {
@@ -1376,9 +1531,11 @@ body {
 }
 
 .artist-modal {
-  width: min(560px, 100%);
-  max-height: 80vh;
-  overflow: auto;
+  width: min(1080px, 95vw);
+  height: min(720px, 92vh);
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.6fr);
+  grid-template-rows: auto 1fr auto;
   background: var(--paper-elev);
   color: var(--ink);
   border: 1px solid var(--rule);
@@ -1387,7 +1544,24 @@ body {
     0 1px 0 var(--rule-soft),
     0 24px 60px rgba(26, 23, 19, 0.35);
   position: relative;
+  overflow: hidden;
   animation: artist-modal-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.artist-modal > .artist-modal-plate { grid-column: 1; grid-row: 1 / span 3; }
+.artist-modal > .artist-modal-head   { grid-column: 2; grid-row: 1; }
+.artist-modal > .artist-modal-body   { grid-column: 2; grid-row: 2; }
+.artist-modal > .artist-modal-foot   { grid-column: 2; grid-row: 3; }
+
+@media (max-width: 760px) {
+  .artist-modal {
+    grid-template-columns: 1fr;
+    grid-template-rows: 200px auto 1fr auto;
+    height: 95vh;
+  }
+  .artist-modal > .artist-modal-plate { grid-column: 1; grid-row: 1; }
+  .artist-modal > .artist-modal-head  { grid-column: 1; grid-row: 2; }
+  .artist-modal > .artist-modal-body  { grid-column: 1; grid-row: 3; }
+  .artist-modal > .artist-modal-foot  { grid-column: 1; grid-row: 4; }
 }
 @keyframes artist-modal-rise {
   from { transform: translateY(12px); opacity: 0; }
@@ -1405,12 +1579,59 @@ body {
   background: var(--stamp);
 }
 
+.artist-modal-plate {
+  position: relative;
+  grid-row: 1 / span 2;
+  background: var(--ink);
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  .artist-modal-plate {
+    grid-row: 1;
+  }
+}
+.artist-modal-plate-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.95;
+}
+.artist-modal-plate-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(3rem, 10vw, 6rem);
+  color: var(--paper-elev);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(237,230,213,0.08), transparent 55%),
+    var(--ink);
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+.artist-modal-plate-caption {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(237, 230, 213, 0.55);
+}
+
 .artist-modal-head {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  gap: 0.15rem 1rem;
-  padding: 1.5rem 1.5rem 1rem;
+  grid-template-rows: auto auto auto;
+  gap: 0.2rem 1rem;
+  padding: 1.3rem 1.5rem 0.9rem;
   border-bottom: 1px solid var(--rule-soft);
 }
 .artist-modal-eyebrow {
@@ -1455,8 +1676,16 @@ body {
 
 .artist-modal-body {
   padding: 1.25rem 1.5rem;
-  display: grid;
-  gap: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+.artist-modal-body::-webkit-scrollbar { width: 6px; }
+.artist-modal-body::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 3px;
 }
 .artist-modal-status {
   margin: 0;
@@ -1466,13 +1695,7 @@ body {
   font-style: italic;
 }
 .artist-modal-thumb {
-  width: 140px;
-  height: 140px;
-  object-fit: cover;
-  float: right;
-  margin: 0 0 0.5rem 1rem;
-  border: 1px solid var(--rule);
-  background: var(--paper-sunk);
+  display: none; /* replaced by the plate image */
 }
 .artist-modal-desc {
   margin: 0;
@@ -1667,6 +1890,111 @@ body {
   color: rgba(255, 255, 255, 0.75);
 }
 
+.queue-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+  white-space: nowrap;
+}
+.queue-toggle:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.queue-toggle--on {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.queue-toggle-glyph {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.queue-toggle-label {
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+
+/* Ribbon under the Player: "kin by sound" = cosine neighbors of viz_fingerprint */
+.similar-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  position: fixed;
+  bottom: 168px; /* sits just above the Player footer */
+  left: 1rem;
+  right: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  z-index: 9;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.similar-strip--muted {
+  opacity: 0.6;
+}
+.similar-strip-label {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.similar-strip-status {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-mute);
+}
+.similar-strip-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+}
+.similar-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms;
+}
+.similar-chip:hover:not(:disabled) {
+  border-color: var(--stamp);
+  background: var(--paper-sunk);
+}
+.similar-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.similar-chip-artist {
+  font-size: 0.78rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.similar-chip-meta {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+}
+
 .focus-strip-body {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -1789,4 +2117,202 @@ body {
   }
   .focus-now { min-width: 0; }
   .tempo-chips { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Enrichment debug strip — below FocusStrip, before results. */
+.debug-strip {
+  padding: 0.5rem 2.5rem 0.9rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.debug-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+.debug-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+}
+.debug-chip {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-elev);
+  border: 1px solid var(--rule);
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  transition: all 140ms ease;
+  min-width: 140px;
+}
+.debug-chip:hover {
+  background: var(--paper-sunk);
+  border-color: var(--ink);
+}
+.debug-chip--on {
+  background: var(--stamp-soft);
+  border-color: var(--stamp);
+  color: var(--ink);
+}
+.debug-chip-label {
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.debug-chip-count {
+  color: var(--ink-mute);
+  font-size: 0.65rem;
+  margin-left: auto;
+}
+.debug-chip--on .debug-chip-count { color: var(--ink); }
+.debug-chip-pct {
+  color: var(--ink-mute);
+  font-size: 0.6rem;
+}
+.debug-chip-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--stamp);
+  opacity: 0.35;
+  pointer-events: none;
+  transition: width 400ms ease;
+}
+.debug-chip--on .debug-chip-bar { opacity: 0.7; }
+.debug-clear {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 0.3rem 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+}
+.debug-clear:hover {
+  color: var(--stamp);
+  border-color: var(--stamp);
+}
+
+/* Artist modal dossier — chips for genres & similar peers + stats row. */
+.artist-modal-stats {
+  display: flex;
+  gap: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+}
+.artist-modal-stats strong {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 0.2rem;
+}
+.artist-modal-chips-block {
+  margin-top: 0.9rem;
+}
+.artist-modal-chips-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 0.35rem;
+}
+.artist-modal-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.artist-modal-chip {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.2rem 0.55rem;
+  background: var(--paper-elev);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+.artist-modal-chip--link {
+  cursor: pointer;
+  text-transform: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  background: transparent;
+}
+.artist-modal-chip--link:hover {
+  border-color: var(--stamp);
+  color: var(--stamp);
+  background: var(--paper-sunk);
+}
+
+/* ============================================================
+ *  Colophon — attribution footer for the public deploy.
+ *  Bottom of the page, above the persistent player.
+ * ============================================================ */
+.colophon {
+  border-top: 1px solid var(--rule);
+  margin: 3rem 1.5rem 8rem;
+  padding: 1.25rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  align-items: baseline;
+}
+.colophon-stamp {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+.colophon-body {
+  max-width: 62ch;
+}
+.colophon a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--rule);
+}
+.colophon a:hover {
+  color: var(--stamp);
+  text-decoration-color: var(--stamp);
+}
+.colophon-meta {
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .colophon {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .colophon-meta { text-align: left; }
 }

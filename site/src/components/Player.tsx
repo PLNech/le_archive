@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { usePlayerStore } from "../hooks/usePlayerStore";
 import { useAudioAnalyser } from "../hooks/useAudioAnalyser";
 import { useFingerprint } from "../hooks/useFingerprint";
+import { trackConversion } from "../lib/insights";
 import { Visualizer } from "./Visualizer";
+
+const CONVERSION_THRESHOLD_SEC = 180;
 
 declare global {
   interface Window {
@@ -61,10 +64,8 @@ function fmtTime(seconds: number): string {
 function useMixcloudScript(): boolean {
   const [ready, setReady] = useState(() => Boolean(window.Mixcloud));
   useEffect(() => {
-    if (window.Mixcloud) {
-      setReady(true);
-      return;
-    }
+    // Already globally loaded? State initializer covered it; nothing to do.
+    if (window.Mixcloud) return;
     let existing = document.querySelector<HTMLScriptElement>(
       `script[src="${WIDGET_API_SRC}"]`
     );
@@ -86,15 +87,21 @@ export function Player() {
   const stop = usePlayerStore((s) => s.stop);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<MixcloudWidget | null>(null);
+  const objectIdRef = useRef<string | undefined>(current?.objectID);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(current?.duration ?? 0);
   const scriptReady = useMixcloudScript();
   const analyser = useAudioAnalyser();
   const fingerprint = useFingerprint(current?.fingerprint);
+  const mixcloudUrl = current?.mixcloudUrl;
 
   useEffect(() => {
-    if (!scriptReady || !iframeRef.current || !window.Mixcloud || !current) {
+    objectIdRef.current = current?.objectID;
+  }, [current?.objectID]);
+
+  useEffect(() => {
+    if (!scriptReady || !iframeRef.current || !window.Mixcloud || !mixcloudUrl) {
       return;
     }
     const widget = window.Mixcloud.PlayerWidget(iframeRef.current);
@@ -107,11 +114,22 @@ export function Player() {
       // Events only exist after ready resolves
       widget.events.play?.on(() => mounted && setPlaying(true));
       widget.events.pause?.on(() => mounted && setPlaying(false));
-      widget.events.ended?.on(() => mounted && setPlaying(false));
+      widget.events.ended?.on(() => {
+        if (!mounted) return;
+        setPlaying(false);
+        window.dispatchEvent(
+          new CustomEvent("player:ended", {
+            detail: { objectID: objectIdRef.current },
+          }),
+        );
+      });
       widget.events.progress?.on((pos, dur) => {
         if (!mounted) return;
         setPosition(pos);
         if (dur) setDuration(dur);
+        if (pos >= CONVERSION_THRESHOLD_SEC && objectIdRef.current) {
+          trackConversion(objectIdRef.current);
+        }
       });
 
       try {
@@ -128,7 +146,17 @@ export function Player() {
       mounted = false;
       widgetRef.current = null;
     };
-  }, [scriptReady, current?.mixcloudUrl]);
+  }, [scriptReady, mixcloudUrl]);
+
+  // Global space-to-toggle shortcut dispatches a CustomEvent we listen for.
+  // Must stay above any early return so hook order is stable across renders.
+  useEffect(() => {
+    const onToggle = () => {
+      widgetRef.current?.togglePlay().catch(() => { /* swallow */ });
+    };
+    window.addEventListener("player:toggle", onToggle);
+    return () => window.removeEventListener("player:toggle", onToggle);
+  }, []);
 
   if (!current) return null;
 
@@ -143,15 +171,6 @@ export function Player() {
       /* swallow */
     }
   };
-
-  // Global space-to-toggle shortcut dispatches a CustomEvent we listen for.
-  useEffect(() => {
-    const onToggle = () => {
-      widgetRef.current?.togglePlay().catch(() => { /* swallow */ });
-    };
-    window.addEventListener("player:toggle", onToggle);
-    return () => window.removeEventListener("player:toggle", onToggle);
-  }, []);
 
   const seekTo = async (e: React.MouseEvent<HTMLDivElement>) => {
     const w = widgetRef.current;

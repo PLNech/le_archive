@@ -21,15 +21,17 @@ export function useAudioCoverage(): Coverage | null {
 
     async function run() {
       try {
-        const res = (await searchClient.search([
-          {
-            indexName: INDEX_NAME,
-            query: "",
-            filters: "_enrichment.audio:true",
-            hitsPerPage: 0,
-          },
-          { indexName: INDEX_NAME, query: "", hitsPerPage: 0 },
-        ])) as unknown as SearchResult;
+        const res = (await searchClient.search({
+          requests: [
+            {
+              indexName: INDEX_NAME,
+              params: "",
+              filters: "_enrichment.audio:true",
+              hitsPerPage: 0,
+            },
+            { indexName: INDEX_NAME, params: "", hitsPerPage: 0 },
+          ],
+        })) as unknown as SearchResult;
         if (cancelled) return;
         const analyzed = res.results?.[0]?.nbHits ?? 0;
         const total = res.results?.[1]?.nbHits ?? 0;

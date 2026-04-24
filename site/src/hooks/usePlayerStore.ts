@@ -15,6 +15,7 @@ export type PlayingSet = {
     n_frames: number;
     data_b64: string;
   };
+  similarBySound?: string[];
 };
 
 type PlayerState = {
