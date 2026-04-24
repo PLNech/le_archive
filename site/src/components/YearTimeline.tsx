@@ -30,8 +30,9 @@ export function YearTimeline() {
   const total = items.reduce((n, i) => n + i.count, 0);
 
   return (
-    <div className="timeline" role="group" aria-label="year timeline">
+    <div className="timeline timeline-section" role="group" aria-label="year timeline">
       <div className="timeline-head">
+        <span className="plate-eyebrow">Plate I · Anni</span>
         <span className="timeline-range">
           {min}–{max}
         </span>

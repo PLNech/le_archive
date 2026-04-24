@@ -28,7 +28,7 @@ export function DebugStrip() {
 
   return (
     <section className="debug-strip" aria-label="enrichment debug filter">
-      <span className="debug-eyebrow">Fig. 3 · Enrichment ledger</span>
+      <span className="plate-eyebrow">Plate IV · Enrichment ledger</span>
       <div className="debug-chips">
         {ALL_FLAGS.map((flag) => {
           const n = coverage[flag];

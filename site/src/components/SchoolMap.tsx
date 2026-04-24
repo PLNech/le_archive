@@ -46,7 +46,7 @@ export function SchoolMap() {
     <section className="school-map-wrap">
       <header className="school-map-head">
         <div>
-          <span className="school-map-eyebrow">Fig. 1</span>
+          <span className="plate-eyebrow">Plate II · Floor Plan</span>
           <span className="school-map-title">The School — a plan</span>
         </div>
         <span className="school-map-hint">

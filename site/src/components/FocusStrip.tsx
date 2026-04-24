@@ -33,7 +33,7 @@ export function FocusStrip() {
   return (
     <section className="focus-strip" aria-label="focus-mode filters">
       <div className="focus-strip-head">
-        <span className="focus-strip-eyebrow">Fig. 2</span>
+        <span className="plate-eyebrow">Plate III · Focus Console</span>
         <span className="focus-strip-title">Seminar console</span>
         {coverage && (
           <span className="focus-coverage" title="sets with P6 audio features">

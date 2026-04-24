@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   InstantSearch,
   SearchBox,
@@ -24,6 +25,8 @@ import { QueueBridge } from "./components/QueueBridge";
 import { DebugStrip } from "./components/DebugStrip";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { Colophon } from "./components/Colophon";
+import { ScrollProgress } from "./components/ScrollProgress";
+import { MobileFilters } from "./components/MobileFilters";
 import { useApplyTheme } from "./hooks/useThemeStore";
 import { useFocusStore, composeFocusFilters } from "./hooks/useFocusStore";
 import {
@@ -60,6 +63,11 @@ function App() {
   useKeyboardShortcuts();
   useApplyTheme();
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const focusActive = focusNow || tempo !== "any";
+  const activeFilterCount =
+    (focusActive ? 1 : 0) + (onlyFav ? 1 : 0) + debugFlags.length;
+
   return (
     <InstantSearch
       searchClient={searchClient}
@@ -68,11 +76,15 @@ function App() {
       future={{ preserveSharedStateOnUnmount: true }}
     >
       <Configure hitsPerPage={20} filters={filters || undefined} />
+      <ScrollProgress />
       <header className="app-header">
         <div className="masthead">
           <ThemeToggle />
           <div className="masthead-stamp">Het Archief</div>
           <h1 className="masthead-title">
+            <span className="masthead-accession" aria-hidden>
+              ARCH.&nbsp;016–024 · VOL.&nbsp;I
+            </span>
             <span className="masthead-title-main">De School</span>
             <span className="masthead-title-sub">Amsterdam</span>
           </h1>
@@ -112,8 +124,32 @@ function App() {
       <FocusStrip />
       <DebugStrip />
 
-      <div className="layout">
-        <aside className="filters">
+      <MobileFilters
+        open={filtersOpen}
+        onToggle={() => setFiltersOpen((v) => !v)}
+        onClose={() => setFiltersOpen(false)}
+        activeCount={activeFilterCount}
+      />
+
+      <div className={`layout ${filtersOpen ? "layout--filters-open" : ""}`}>
+        <aside
+          id="site-filters"
+          className={`filters ${filtersOpen ? "filters--open" : ""}`}
+        >
+          <div className="filters-sheet-handle" aria-hidden>
+            <span className="filters-sheet-grip" />
+          </div>
+          <div className="filters-sheet-head">
+            <span className="filters-sheet-title">Filters</span>
+            <button
+              type="button"
+              className="filters-sheet-close"
+              onClick={() => setFiltersOpen(false)}
+              aria-label="close filters"
+            >
+              ✕
+            </button>
+          </div>
           <section className="facet-section">
             <h3>Curriculum</h3>
             <p className="facet-hint">
