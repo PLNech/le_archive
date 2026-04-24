@@ -20,6 +20,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
+
+from le_archive._io import atomic_write_json
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -148,9 +150,7 @@ def main() -> int:
             except Exception as e:
                 tqdm.write(f"  fail {r['objectID']}: {e}")
 
-    RAW_PATH.write_text(
-        json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    atomic_write_json(RAW_PATH, records)
     print(f"[phase4a] enriched {ok}, missing {miss}, total {len(records)}")
     return 0
 

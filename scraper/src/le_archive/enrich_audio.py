@@ -36,6 +36,7 @@ import librosa
 import numpy as np
 from tqdm import tqdm
 
+from le_archive._io import atomic_write_json
 from le_archive.algolia_client import INDEX_NAME, client as make_client
 
 
@@ -43,10 +44,10 @@ RAW_PATH = Path(__file__).resolve().parents[3] / "scraper" / "data" / "raw_sets.
 TMP_ROOT = Path(tempfile.gettempdir()) / "learchive-audio"
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 
-ANALYSIS_SR = 22050
+ANALYSIS_SR = 16000  # was 22050; lossless for our features (bpm ≤200, mel ≤8kHz)
 FINGERPRINT_BANDS = 24
 FINGERPRINT_TARGET_FRAMES = 1800  # 24 × 1800 = 43.2 kB raw → ~58 kB base64
-CHECKPOINT_EVERY = 5
+CHECKPOINT_EVERY = 1  # save after every set (atomic write → no corruption risk)
 
 
 def download(url: str, dst_stem: Path, timeout: int = 900) -> Path | None:
@@ -64,6 +65,7 @@ def download(url: str, dst_stem: Path, timeout: int = 900) -> Path | None:
         "--no-progress",
         "--no-warnings",
         "--no-cache-dir",
+        "--concurrent-fragments", "4",  # parallel HLS chunk fetch
         "-f", "bestaudio",
         "-o", f"{dst_stem}.%(ext)s",
         "--print", "after_move:filepath",
@@ -87,14 +89,69 @@ def download(url: str, dst_stem: Path, timeout: int = 900) -> Path | None:
     return None
 
 
+def _beat_track_one(y: np.ndarray, sr: int) -> float | None:
+    """Single-pass beat_track returning scalar bpm, or None if degenerate."""
+    t, _ = librosa.beat.beat_track(y=y, sr=sr)
+    arr = np.atleast_1d(np.asarray(t, dtype=float))
+    if arr.size == 0 or arr[0] <= 0:
+        return None
+    return float(arr[0])
+
+
+# librosa's beat-tracker Bayesian prior centers around 125 BPM; on long
+# multi-tempo sets (warm-up → peak → wind-down), the global call averages
+# to exactly one of a few fallback values (125.0, 129.2, 133.9). We sample
+# N windows of WIN_SEC each, median their bpms, and compare against the
+# global — if the global is close to a known fallback and disagrees with
+# the median, we prefer the median.
+_BPM_FALLBACKS = (125.0, 129.2, 133.9)
+_BPM_WIN_SEC = 120
+_BPM_WIN_COUNT = 5
+
+
+def robust_bpm(y: np.ndarray, sr: int, duration_s: float) -> float | None:
+    """Tempo estimate robust to multi-tempo long sets.
+
+    Short tracks (< 2×WIN_SEC): single pass is fine.
+    Long tracks: sample WIN_COUNT windows, median their bpms.
+    If the global estimate hits a fallback value and disagrees with the
+    windowed median by >10%, trust the median.
+    """
+    global_bpm = _beat_track_one(y, sr)
+    if duration_s < 2 * _BPM_WIN_SEC or global_bpm is None:
+        return global_bpm
+
+    win_len = _BPM_WIN_SEC * sr
+    total = len(y)
+    # Uniformly spaced window starts; skip first/last 5% to dodge fade-ins.
+    margin = int(total * 0.05)
+    usable = total - 2 * margin - win_len
+    if usable <= 0 or _BPM_WIN_COUNT < 1:
+        return global_bpm
+    starts = np.linspace(margin, margin + usable, _BPM_WIN_COUNT, dtype=int)
+
+    bpms: list[float] = []
+    for start in starts:
+        seg = y[start : start + win_len]
+        b = _beat_track_one(seg, sr)
+        if b is not None:
+            bpms.append(b)
+    if not bpms:
+        return global_bpm
+
+    med = float(np.median(bpms))
+    looks_fallback = any(abs(global_bpm - f) < 0.5 for f in _BPM_FALLBACKS)
+    if looks_fallback and abs(global_bpm - med) / max(med, 1) > 0.10:
+        return med
+    # Otherwise prefer the median — more robust regardless.
+    return med
+
+
 def analyze(y: np.ndarray, sr: int) -> dict:
     """Compute all audio features from mono signal."""
-    # --- Tempo / beat ------------------------------------------------------
-    # librosa >=0.10 returns tempo as a length-1 ndarray (one BPM per segment,
-    # default = one global). Coerce to scalar defensively.
-    tempo_raw, _ = librosa.beat.beat_track(y=y, sr=sr)
-    tempo_arr = np.atleast_1d(np.asarray(tempo_raw, dtype=float))
-    bpm = float(tempo_arr[0]) if tempo_arr.size and tempo_arr[0] > 0 else None
+    duration_s = len(y) / sr
+    # --- Tempo / beat (sliding-window robust) ------------------------------
+    bpm = robust_bpm(y, sr, duration_s)
 
     # --- Spectral & energy -------------------------------------------------
     centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
@@ -120,7 +177,6 @@ def analyze(y: np.ndarray, sr: int) -> dict:
         y=y, sr=sr, n_mels=FINGERPRINT_BANDS, hop_length=FINE_HOP, n_fft=FINE_HOP
     )  # shape: (bands, fine_frames)
     fine_frames = S_fine.shape[1]
-    duration_s = len(y) / sr
     # Keep ≥2s per target frame; shrink frame count for short sets.
     target_frames = min(
         FINGERPRINT_TARGET_FRAMES, max(30, int(duration_s / 2))
@@ -223,7 +279,31 @@ def main() -> int:
     p.add_argument("--no-push", action="store_true",
                    help="mutate raw_sets.json only, skip Algolia partial_update")
     p.add_argument("--verbose", action="store_true")
+    p.add_argument(
+        "--shard",
+        type=str,
+        default="0/1",
+        help="cooperative partition as I/N (0-indexed). Run multiple workers "
+             "with disjoint shards to parallelize: e.g. worker A --shard 0/2, "
+             "worker B --shard 1/2. Each takes records where "
+             "hash(objectID) %% N == I.",
+    )
+    p.add_argument(
+        "--log",
+        type=str,
+        default=None,
+        help="path to a per-worker log file (checkpoints print there).",
+    )
     args = p.parse_args()
+
+    try:
+        shard_i_str, shard_n_str = args.shard.split("/", 1)
+        shard_i, shard_n = int(shard_i_str), int(shard_n_str)
+        if shard_n < 1 or shard_i < 0 or shard_i >= shard_n:
+            raise ValueError
+    except ValueError:
+        print(f"[phase6] bad --shard value {args.shard!r}, expected I/N", file=sys.stderr)
+        return 2
 
     signal.signal(signal.SIGINT, _on_sigint)
 
@@ -234,11 +314,22 @@ def main() -> int:
         and not r.get("_enrichment", {}).get("audio")
         and not r.get("mixcloud_missing")
     ]
+    # Cooperative sharding: each worker takes records matching its hash slot.
+    # Deterministic (hash of objectID), so worker set doesn't shift across
+    # restarts. Python's hash() is salted per-process → use a stable hash.
+    if shard_n > 1:
+        import zlib
+        todo = [
+            r for r in todo
+            if zlib.crc32(r["objectID"].encode("utf-8")) % shard_n == shard_i
+        ]
+
     # Always process shortest-first so visible progress accrues fast and
     # long marathon sets run once we're confident the pipeline is stable.
     todo.sort(key=lambda r: r.get("duration") or 99_999)
 
-    print(f"[phase6] {len(todo)} sets pending audio analysis (shortest first)")
+    shard_tag = f" (shard {shard_i}/{shard_n})" if shard_n > 1 else ""
+    print(f"[phase6] {len(todo)} sets pending audio analysis (shortest first){shard_tag}")
     if args.limit:
         todo = todo[: args.limit]
         print(f"[phase6] limit → {len(todo)}")
@@ -250,6 +341,12 @@ def main() -> int:
         )
 
     algolia = None if (args.dry_run or args.no_push) else make_client()
+
+    # Sharded runs MUST NOT write raw_sets.json — two workers rewriting the
+    # same file will race and clobber each other's flags. Algolia is the
+    # source of truth; `poetry run python -m le_archive.index` resyncs
+    # raw_sets.json post-run (task #17).
+    write_raw = shard_n == 1 and not args.dry_run
 
     ok = failed = since_checkpoint = 0
     for r in tqdm(todo, desc="audio"):
@@ -274,14 +371,15 @@ def main() -> int:
             except Exception as e:
                 tqdm.write(f"  [{r['objectID']}] algolia update failed: {e}")
 
-        if not args.dry_run and since_checkpoint >= CHECKPOINT_EVERY:
-            RAW_PATH.write_text(
-                json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+        if write_raw and since_checkpoint >= CHECKPOINT_EVERY:
+            atomic_write_json(RAW_PATH, records)
             since_checkpoint = 0
             tqdm.write(f"  checkpoint: {ok} ok, {failed} failed")
+        elif shard_n > 1 and since_checkpoint >= CHECKPOINT_EVERY:
+            since_checkpoint = 0
+            tqdm.write(f"  checkpoint (no file write, sharded): {ok} ok, {failed} failed")
 
-    if not args.dry_run and since_checkpoint > 0:
+    if write_raw and since_checkpoint > 0:
         RAW_PATH.write_text(
             json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
         )
