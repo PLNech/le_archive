@@ -24,6 +24,11 @@ node_modules/
 site/dist/
 .vite/
 
+# playwright
+site/playwright-report/
+site/test-results/
+site/.playwright/
+
 # os
 .DS_Store
 Thumbs.db
