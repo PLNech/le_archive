@@ -377,8 +377,14 @@ def main() -> int:
             return True
         if args.retry_failed and (row.get("discogs_error") or row.get("lastfm_error")):
             return True
-        # Audit cleared this dossier; if an override is now active, re-run.
-        if row.get("_cleared_by_audit") and (overrides.get(a) or {}).get("action"):
+        # Audit cleared this dossier; re-run under --retry-failed (Phase A will
+        # now gate obvious wrong-matches). Active overrides also trigger re-run.
+        if row.get("_cleared_by_audit") and (
+            args.retry_failed or (overrides.get(a) or {}).get("action")
+        ):
+            return True
+        # Phase A previously rejected this dossier; re-run if blacklist changed.
+        if row.get("_phase_a_rejected") and args.retry_failed:
             return True
         return False
 
