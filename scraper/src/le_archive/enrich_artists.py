@@ -39,6 +39,7 @@ from tenacity import (
 from tqdm import tqdm
 
 from .algolia_client import INDEX_NAME, client as algolia_client, load_env
+from .disambiguation import reject as phase_a_reject
 
 ARTISTS_INDEX = "archive_artists"
 
@@ -429,13 +430,29 @@ def main() -> int:
 
         for name in tqdm(todo, desc="artists"):
             try:
-                cache[name] = build_artist_record(
+                row = build_artist_record(
                     http, discogs_token, lastfm_key, name, args.delay,
                     override=overrides.get(name),
                 )
             except Exception as e:
                 tqdm.write(f"  fail {name}: {e}")
                 continue
+
+            # Phase A disambiguation gate — reject obvious wrong-person matches
+            # (k-pop / metal / pre-2016 death dates). Only skip the gate when an
+            # override is in play — the user has already hand-picked the target.
+            if not (overrides.get(name) or {}).get("action"):
+                rejected, reason = phase_a_reject(row)
+                if rejected:
+                    tqdm.write(f"  phase-A reject {name}: {reason}")
+                    row = {
+                        "name": name,
+                        "_enriched": True,
+                        "_phase_a_rejected": True,
+                        "_rejection_reason": reason,
+                    }
+
+            cache[name] = row
 
             # Fan out denormalized fields to every set featuring this artist.
             # Accumulate updates (keyed by objectID so late updates for the same
