@@ -2,6 +2,16 @@ import { useEffect } from "react";
 import { useArtistModal } from "../hooks/useArtistModal";
 import { useArtistSummary } from "../hooks/useArtistSummary";
 import { useArtistDossier } from "../hooks/useArtistDossier";
+import { useArtistSets } from "../hooks/useArtistSets";
+import { usePlayerStore } from "../hooks/usePlayerStore";
+import { trackClick } from "../lib/insights";
+
+function fmtDuration(seconds?: number): string {
+  if (!seconds) return "";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
+}
 
 function formatCount(n?: number): string {
   if (!n) return "—";
@@ -21,6 +31,8 @@ export function ArtistModal() {
   const close = useArtistModal((s) => s.close);
   const wiki = useArtistSummary(name);
   const dossier = useArtistDossier(name);
+  const artistSets = useArtistSets(name);
+  const play = usePlayerStore((s) => s.play);
 
   useEffect(() => {
     if (!name) return;
@@ -154,6 +166,75 @@ export function ArtistModal() {
             <p className="artist-modal-status">
               no dossier on file. the archive keeps some faculty anonymous.
             </p>
+          )}
+
+          {artistSets.state === "ready" && artistSets.sets.length > 0 && (
+            <div className="artist-modal-sessions">
+              <div className="artist-modal-sessions-head">
+                <span className="artist-modal-chips-label">
+                  Sessions on file
+                </span>
+                <span className="artist-modal-sessions-count">
+                  {artistSets.sets.length}
+                </span>
+              </div>
+              <ul className="artist-modal-sessions-list">
+                {artistSets.sets.map((s) => {
+                  const playable = Boolean(s.mixcloud_url);
+                  return (
+                    <li key={s.objectID}>
+                      <button
+                        type="button"
+                        className="artist-modal-session"
+                        disabled={!playable}
+                        onClick={() => {
+                          if (!s.mixcloud_url) return;
+                          trackClick(s.objectID, "Dossier Set Played");
+                          play({
+                            objectID: s.objectID,
+                            artists: s.artists,
+                            date: s.date,
+                            space: s.space,
+                            event: s.event,
+                            mixcloudUrl: s.mixcloud_url,
+                            coverUrl: s.cover_url,
+                            duration: s.duration,
+                            fingerprint: s.viz_fingerprint,
+                            similarBySound: s.similar_by_sound,
+                          });
+                        }}
+                        title={
+                          playable
+                            ? `play: ${s.date} · ${s.space} · ${s.event}`
+                            : "no audio on file"
+                        }
+                      >
+                        <span className="artist-modal-session-date">
+                          {s.date}
+                        </span>
+                        <span className="artist-modal-session-body">
+                          <span className="artist-modal-session-event">
+                            {s.event || "—"}
+                          </span>
+                          <span className="artist-modal-session-space">
+                            {s.space || "—"}
+                          </span>
+                        </span>
+                        <span className="artist-modal-session-meta">
+                          {s.duration ? fmtDuration(s.duration) : "—"}
+                        </span>
+                        <span
+                          className="artist-modal-session-play"
+                          aria-hidden
+                        >
+                          {playable ? "▸" : "·"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </div>
 
